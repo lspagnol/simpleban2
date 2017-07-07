@@ -1,0 +1,28 @@
+# Nginx (HTTP 403)
+
+LOG='/var/log/nginx.log'
+
+SEARCH='^.* nginx: .* HTTP/(1|2)\.(0|1)" 403 '
+EXTRACT='s/^.*nginx: //g ; s/ .*$//g'
+
+ADDR_TRIGGERS='
+5:2:86400
+60:5:86400
+3600:8:86400
+'     
+
+NET_TRIGGERS='86400:2:86400'
+
+ACTION_IN='-p tcp -m multiport --dports 80,443 -j DROP'
+#ACTION_IN='-j DROP'
+ACTION_OUT='-j DROP'
+
+ENABLE_BAN=0
+
+WHITELIST_REVERSE='
+.google.com
+.googlebot.com
+.yahoo.com
+.yahoo.net
+.search.msn.com
+'

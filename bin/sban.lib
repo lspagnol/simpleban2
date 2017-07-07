@@ -1,0 +1,248 @@
+#!/bin/bash
+
+########################################################################
+
+now=$(date +%s)
+
+########################################################################
+
+function log {
+if [ "${TEST}" = "1" ] ; then
+	echo "${@}"
+else
+	echo "${@}" |logger -t sban
+fi
+
+}
+
+function die {
+echo "Aborted: ${@}"
+exit 1
+}
+
+########################################################################
+
+function load_conf {
+
+[ -f /etc/simpleban/sban_defaults.cf ] || die "file '/etc/simpleban/sban_defaults.cf' not found"
+
+# Chargement configuration par défaut
+. /etc/simpleban/sban_defaults.cf
+
+# Chargement configuration locale
+[ -f /etc/simpleban/sban.cf ] && . /etc/simpleban/sban.cf
+
+FILTERS="${FILTERS//,/ }"
+
+}
+
+function load_filter {
+
+[ -f /etc/simpleban/filters/${1}.cf ] || die "file '/etc/simpleban/filters/${1}.cf' not found"
+
+# Chargement configuration du filtre
+. /etc/simpleban/filters/${1}.cf
+
+# Vérifications
+[ -z "${LOG}" ] && die "undefined value 'LOG' in filter '${1}'"
+[ -z "${SEARCH}" ] && die "undefined value 'SEARCH' in filter '${1}'"
+[ -z "${EXTRACT}" ] && die "undefined value 'EXTRACT' in filter '${1}'"
+[ -f ${LOG} ] || die "log file '${LOG}' not found"
+
+}
+
+########################################################################
+
+function init_db {
+
+# Création répertoire db
+
+if [ ! -d ${VARDIR} ] ; then
+	mkdir ${VARDIR} ; chown root:root ${VARDIR} ; chmod 750 ${VARDIR}
+fi
+
+# Création db
+if [ ! -f ${DB} ] ; then
+
+	sqlite ${DB} "create table logV4 (epoch BIGINT NOT NULL,addr CHAR(40) NOT NULL,net CHAR(40),filter CHAR(32));"
+	sqlite ${DB} "CREATE INDEX epochV4 ON logV4 (epoch);"
+	sqlite ${DB} "CREATE INDEX addrV4 ON logV4 (addr);"
+	sqlite ${DB} "CREATE INDEX netV4 ON logV4 (net);"
+	sqlite ${DB} "CREATE INDEX filterV4 ON logV4 (filter);"
+
+	sqlite ${DB} "create table logV6 (epoch BIGINT NOT NULL,addr CHAR(16) NOT NULL,net CHAR(16),filter CHAR(32));"
+	sqlite ${DB} "CREATE INDEX epochV6 ON logV6 (epoch);"
+	sqlite ${DB} "CREATE INDEX addrV6 ON logV6 (addr);"
+	sqlite ${DB} "CREATE INDEX netV6 ON logV6 (net);"
+	sqlite ${DB} "CREATE INDEX filterV6 ON logV6 (filter);"
+
+fi
+}
+
+########################################################################
+
+function addr_type {
+
+if [ "${1//./}" = "${1}" ] ; then
+	IPT="${IPT6}"
+	TABLE="logV6"
+	CIDR="${CIDR_V6}"
+else
+	IPT="${IPT4}"
+	TABLE="logV4"
+	CIDR="${CIDR_V4}"
+fi
+
+}
+
+function get_net {
+
+if [ "${1//./}" = "${1}" ] ; then
+	if [ "${1}" = "${1//\//}" ] ; then
+		# c'est une adresse IP
+		sipcalc ${1}/${CIDR_V6} |grep "^Subnet prefix" |awk '{print $5}' |cut -d"/" -f1
+	else
+		# c'est un réseau
+		sipcalc ${1} |grep "^Subnet prefix" |awk '{print $5}' |cut -d"/" -f1
+	fi
+else
+	if [ "${1}" = "${1//\//}" ] ; then
+		# c'est une adresse IP
+		sipcalc ${1}/${CIDR_V4} |grep "^Network address" |awk '{print $4}'
+	else
+		# c'est un réseau
+		sipcalc ${1} |grep "^Network address" |awk '{print $4}'
+	fi
+fi
+
+}
+
+function check_addr_whitelist {
+
+if [ "${WHITELIST}" = "" ] ; then
+	return 1
+fi
+
+local w
+
+for w in ${WHITELIST} ; do
+	if [ "${w}" = "${w//\//}" ] ; then
+		# l'item de liste blanche est une adresse IP
+		if [ "${1}" = "${w}" ] ; then
+			return 0
+		fi
+	else
+		# l'item de liste blanche est un réseau
+		local m=${w#*/} # extraire le masque
+		if [ "$(get_net ${w})" = "$(get_net ${1}/${m})" ] ; then
+			return 0
+		fi
+	fi
+done
+
+return 1
+
+}
+
+function check_reverse_whitelist {
+
+if [ "${WHITELIST_REVERSE}" = "" ] ; then
+	return 1
+fi
+
+local W
+W=${WHITELIST_REVERSE//./\\.}
+W=${W//-/\\-}
+
+local w
+local h=$(host ${1} |sed 's/^.* domain name pointer //g ; s/.$//g')
+
+for w in ${W} ; do
+	echo "${h}" |grep -q "${w}$"
+	if [ $? -eq 0 ] ; then
+		return 0
+	fi
+done
+
+return 1
+
+}
+
+function get_pid {
+
+ps awx |grep " ${PARSER} ${1}$" |grep -v grep |awk '{print $1}'
+
+}
+
+function banned_list {
+
+${IPT4} -nL ${CHAIN} |egrep -v '^(Chain|target)' |awk '{print $4" "$5}' |sed 's/^0.0.0.0\/0 //g ; s/ 0.0.0.0\/0$//g'|awk '{print $1}' |sort |uniq
+${IPT6} -nL ${CHAIN} |egrep -v '^(Chain|target)' |awk '{print $3" "$4}' |sed 's/^::\/0 //g ; s/ ::\/0$//g' |awk '{print $1}' |sort |uniq
+
+}
+
+function blocker_flush {
+
+${IPT4} -F ${CHAIN}
+${IPT6} -F ${CHAIN}
+
+atrm $(atq |awk '{print $1}') 2>/dev/null
+
+}
+
+########################################################################
+
+function parser_start {
+
+load_filter ${1}
+local pid=$(get_pid ${1})
+
+if [ "${pid}" = "" ] ; then
+	log "starting filter '${1}'"
+	${PARSER} ${1} 2>/dev/null >/dev/null </dev/null &
+	local r=$(parser_status ${1})
+	log "${r}"
+	echo "${r}"
+else
+	echo "filter '${1}' is already running"
+fi
+
+}
+
+function parser_stop {
+
+load_filter ${1}
+local pid=$(get_pid ${1})
+
+if [ "${pid}" = "" ] ; then
+	echo "filter '${1}' is already stopped"
+else
+	log "stopping filter '${1}'"
+	kill ${pid}
+	local r=$(parser_status ${1})
+	log "${r}"
+	echo "${r}"
+fi
+
+}
+
+function parser_status {
+
+load_filter ${1}
+local pid=$(get_pid ${1})
+
+echo -n "filter '${1}' is "
+if [ "${pid}" = "" ] ; then
+	echo "stopped"
+else
+	echo "running"
+fi
+}
+
+function parser_list {
+
+ls -1 /etc/simpleban/filters/ |grep '.cf$' |sed 's/.cf//g'
+
+}
+
+########################################################################

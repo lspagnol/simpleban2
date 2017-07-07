@@ -1,0 +1,38 @@
+########################################################################
+#                                                                      #
+#                Fichier de configuration PAR DEFAUT                   #
+#                                                                      #
+#               !! VOUS NE DEVRIEZ PAS LE MODIFIER !!                  #
+#                                                                      #
+#             Si vous souhaitez changer des paramètres,                #
+#           utilisez le fichier '/etc/simpleban/sban.cf'.              #
+#                                                                      #
+########################################################################
+
+BINDIR=/usr/local/simpleban
+PARSER=${BINDIR}/sban-log_parser
+BLOCKER=${BINDIR}/sban-addr_blocker
+
+VARDIR=/var/lib/simpleban
+DB=${VARDIR}/sban.db
+
+TSP='/usr/bin/tsp -nf'
+
+IPT4='/sbin/iptables'
+IPT6='/sbin/ip6tables'
+
+SEARCH_CMD='/bin/grep -E'
+EXTRACT_CMD='/bin/sed'
+
+ENABLE_BAN=0
+ENABLE_UNBAN=1
+ENABLE_LOG_IF_MATCH=1
+
+ADDR_TRIGGERS='60:5:3600'
+
+CHAIN='BANNED'
+
+CIDR_V4=24
+CIDR_V6=64
+
+WHITELIST='127.0.0.1,::1'

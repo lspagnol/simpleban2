@@ -1,0 +1,164 @@
+########################################################################
+#                                                                      #
+#                Fichier de configuration principal                    #
+#                                                                      #
+#                       !!!!! ATTENTION !!!!!                          #
+#                                                                      #
+#        Déclarez TOUTES les variables avec des 'simple-quote'.        #
+#             N'utilisez surtout pas les "double quote".               #
+#                                                                      #
+########################################################################
+
+# Voir le fichier "/etc/simpleban/sban_defaults.cf" pour les paramètres
+# par défaut.
+
+# Les paramètres peuvent être modifiés modifiés indépendamment dans
+# chaque fichier de configuration de filtre.
+
+########################################################################
+# Répertoires et fichiers
+
+#BINDIR=/usr/local/simpleban
+#PARSER=${BINDIR}/sban-log_parser
+#BLOCKER=${BINDIR}/sban-addr_blocker
+
+#VARDIR=/var/lib/simpleban
+#DB=${VARDIR}/sban.db
+
+########################################################################
+# Commandes
+
+# Task-Spooler (sérialisation des commandes)
+#TSP='/usr/bin/tsp -nf'
+
+# Netfilter
+#IPT4='/sbin/iptables'
+#IPT6='/sbin/ip6tables'
+
+# Commande de recherche (greg "PCRE", "extended", ...)
+#SEARCH_CMD='/bin/grep -P'
+#SEARCH_CMD='/bin/grep -E'
+
+# Commande d'extraction
+#EXTRACT_CMD='/bin/sed'
+
+########################################################################
+# Tracer les lignes de logs qui correspondent aux filtres de recherche.
+
+#ENABLE_LOG_IF_MATCH=1
+
+########################################################################
+# Blocage des adresses
+
+# Toutes les adresses collectées sont enregistrées dans la base de
+# données, mais le blocage est désactivé par défaut.
+# Cela permet de mettre au point les motifs de filtrage et d'extraction
+# d'adresse sans risquer de se "couper l'herbe sous le pied".
+# Il est donc conseillé de n'activer le blocage qu'individuellement,
+# pour chaque filtre.
+
+#ENABLE_BAN=0
+
+########################################################################
+# Planifier le déblocage
+
+# Si le déblocage n'est pas planifié, les adresses resteront bloquées
+# jusqu'au prochain redémarrage du serveur.
+
+#ENABLE_UNBAN=1
+
+########################################################################
+# Critères de déclenchement (par adresse) et durée de blocage
+
+# La variable peut contenir plusieurs critères, ils seront évalués de
+# gauche à droite. Les critères doivent être séparés par un espace ou un
+# retour à la ligne.
+# Un critère contient 3 éléments, le séparateur est le symbole ":"
+# 1 - profondeur de recherche dans l'historique en secondes
+# 2 - nombre de correspondances sur la période de recherche
+# 3 - durée du blocage en secondes
+
+# Exemple 1
+
+#ADDR_TRIGGERS='60:5:3600'
+# => bloquer pendant 3600 secondes si l'événement est détecté 5 fois au
+#    cours des 60 dernières secondes (scan "rapide" de l'assaillant).
+
+# Exemple 2
+
+#ADDR_TRIGGERS='10:2:3600 60:5:3600 3600:10:86400'
+# => bloquer pendant 3600 secondes si l'événement est détecté 5 fois
+#    au cours des 60 dernières secondes.
+#    ET bloquer pendant 86400 secondes si l'événement est détecté 10
+#    fois en 1 heure (scan "lent" de l'assaillant).
+
+########################################################################
+# Critères de déclenchement (par réseau) et durée de blocage
+
+# La définition des critères est la même que pour "ADDR_TRIGGERS", mais
+# la recherche est effectuée sur les réseaux. Les adresses de réseaux
+# calculées à partir des masques "CIDR_V4" et "CIDR_V6".
+# La recherche est effectuée sur le réseau à l'exclusion de l'adresse
+# elle même. Cette fonctionnalité permet de bloquer les réseaux dédiés
+# au scan ...
+
+NET_TRIGGERS="86400:2:86400"
+
+########################################################################
+# Chaine netfilter (IPv4 et IPv6)
+
+# Cette chaine devrait être mise en place en tête des chaines
+# INPUT, OUTPUT (éventuellement FORWARD), juste avant la règle
+# "RELATED,ESTABLISHED".
+
+#CHAIN='BANNED'
+
+########################################################################
+# Masques réseau
+
+# Les masques sont utilisés pour calculer les adresses des réseaux à
+# bloquer. Les cas les plus courants sont /24 en IPv4 et /64 en IPv6.
+
+#CIDR_V4=24
+#CIDR_V6=64
+
+########################################################################
+# Liste blanche (adresses / réseaux)
+
+# La liste blanche supporte:
+# - les adresses IPv4 et IPv6
+# - les adresses de réseau IPv4 et IPv6 (IP/CIDR).
+
+# Pensez à ajouter les adresses:
+# - de loopback (127.0.0.1 et ::1),
+# - celles des machines ou réseaux de confiance,
+# - les réseaux des bridges la machine héberge des conteneurs ou des VMs
+
+#WHITELIST='127.0.0.1 ::1 192.168.1.5 10.1.50.0/24 200a:560:3602:1200:0:0:0:0/64'
+
+WHITELIST='
+127.0.0.1
+::1
+'
+
+########################################################################
+# Liste blanche (hostname)
+
+# Une résolution inverse des adresses IP peut être effectuée pour
+# vérifier si l'adresse IP correspond à un nom de machine ou si elle
+# appartient à un domaine. Cette liste permet, par exemple, de ne pas
+# bloquer les robots des moteurs de recherche.
+
+#WHITELIST_REVERSE='.google.com .googlebot.com .yahoo.com'
+
+########################################################################
+# Listes des filtres à exécuter.
+
+# Les fichiers de configuration doivent être placés dans le répertoire
+# '/etc/simpleban/filters'.
+
+#FILTERS='sshd_auth,nginx_http403'
+
+FILTERS='
+sshd
+'

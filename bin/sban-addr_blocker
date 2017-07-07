@@ -1,0 +1,201 @@
+#!/bin/bash
+
+. /usr/local/simpleban/sban.lib
+
+########################################################################
+
+[ -z "${2}" ] && die 'ip address required'
+addr=${2}
+
+[ -z "${1}" ] && die 'filter name required'
+filter=${1}
+
+########################################################################
+
+load_conf
+load_filter ${filter}
+
+########################################################################
+
+# Initialiser variables IPT, TABLE et CIDR en fonction du type d'adresse
+addr_type ${addr}
+
+# Calculer l'adresse du réseau en fonction de l'adresse IP et de la
+# variable CIDR
+net=$(get_net ${addr})
+
+# Insertion de l'adresse dans la base de données
+sqlite ${DB} "INSERT INTO ${TABLE} VALUES ('${now}','${addr}','${net}','${filter}');"
+
+########################################################################
+# Tester l'adresse IP pour tous les critères
+
+for criteria in ${ADDR_TRIGGERS} ; do
+
+	# Analyse du bloc de critères
+
+	crit=${criteria//:/ } # on éclate les paramètres
+	crit=(${crit}) # transformation en tableau
+
+	age=${crit[0]}
+	max_epoch=$(( ${now} - ${age} ))
+
+	max_count=${crit[1]}
+
+	duration=${crit[2]}
+	duration=$(( ${duration} / 60 )) # conversion en minutes pour "atq"
+
+	# Compter les occurences correspondantes
+	count=$(sqlite ${DB} "SELECT COUNT(*) FROM ${TABLE} WHERE addr='${addr}' AND epoch >= '${max_epoch}';")
+
+	# Tester si le seuil est atteint
+	if [ ${count} -ge ${max_count} ] ; then
+
+		log "'${addr}' + '${filter}' + '${criteria}' => ${count} hits"
+
+		# L'adresse IP est en liste blanche ?
+		check_addr_whitelist ${addr}
+		if [ $? -eq 0 ] ; then
+			log "'${addr}' => WHITELIST"
+			exit 0
+		fi
+
+		# La résolution inverse de l'adresse IP est en liste blanche ?
+		check_reverse_whitelist ${addr}
+		if [ $? -eq 0 ] ; then
+			log "'${addr}' => WHITELIST_REVERSE"
+			exit 0
+		fi
+
+		if [ "${ENABLE_BAN}" = "1" ] ; then
+
+			# Boucle de traitement des règles en entrée et en sortie
+			for w in -s -d ; do
+		
+				# Déterminer l'action à effectuer
+				case ${w} in
+					-s) a="${ACTION_IN}" ; s="IN" ;;
+					-d) a="${ACTION_OUT}" ; s="OUT" ;;
+				esac
+
+				# Si une action est definie, mise en place du blocage
+				if [ ! -z "${a}" ] ; then
+
+					# Vérifier si une règle existe déjà pour cette adresse
+					${IPT} -C ${CHAIN} ${w} ${addr} ${a} 2>/dev/null >/dev/null
+					if [ $? -ne 0 ] ; then
+
+						# Mise en place de la règle de blocage
+						${IPT} -A ${CHAIN} ${w} ${addr} ${a}
+
+						# Planification du déblocage
+						if [ "${ENABLE_UNBAN}" = "1" ] ; then
+							echo "${TSP} ${IPT} -D ${CHAIN} ${w} ${addr} ${a} 2>/dev/null >/dev/null" |at now +${duration} min 2>/dev/null
+						fi
+
+						# Syslog
+						log "'${addr}' + '${filter}' + '${criteria}' => BANNED ${s}"
+
+					else # La règle existe déjà
+
+						# Syslog
+						log "'${addr}' + '${filter}' + '${criteria}' => already banned ${s,,}"
+
+					fi
+
+				fi
+	
+			done
+
+		fi
+
+	fi
+
+done
+
+########################################################################
+# Tester le réseau pour tous les critères
+
+for criteria in ${NET_TRIGGERS} ; do
+
+	# Analyse du bloc de critères
+
+	crit=${criteria//:/ } # on éclate les paramètres
+	crit=(${crit}) # transformation en tableau
+
+	age=${crit[0]}
+	max_epoch=$(( ${now} - ${age} ))
+
+	max_count=${crit[1]}
+
+	duration=${crit[2]}
+	duration=$(( ${duration} / 60 )) # conversion en minutes pour "atq"
+
+	# Compter les occurences correspondantes pour ce réseau sans celles
+	# de l'adresse IP actuelle.
+	count=$(sqlite ${DB} "SELECT COUNT(*) FROM ${TABLE} WHERE addr != '${addr}' AND net='${net}' AND epoch >= '${max_epoch}';")
+
+	# Tester si le seuil est atteint
+	if [ ${count} -ge ${max_count} ] ; then
+
+		log "'${addr}' + '${filter}' + '${criteria}' => ${count} hits"
+
+		# L'adresse IP est en liste blanche ?
+		check_addr_whitelist ${addr}
+		if [ $? -eq 0 ] ; then
+			log "'${addr}' => WHITELIST"
+			exit 0
+		fi
+
+		# La résolution inverse de l'adresse IP est en liste blanche ?
+		check_reverse_whitelist ${addr}
+		if [ $? -eq 0 ] ; then
+			log "'${addr}' => WHITELIST_REVERSE"
+			exit 0
+		fi
+
+		if [ "${ENABLE_BAN}" = "1" ] ; then
+
+			# Boucle de traitement des règles en entrée et en sortie
+			for w in -s -d ; do
+
+				# Déterminer l'action à effectuer
+				case ${w} in
+					-s) a="${ACTION_IN}" ; s="IN" ;;
+					-d) a="${ACTION_OUT}" ; s="OUT" ;;
+				esac
+
+				# Si une action est definie, mise en place du blocage
+				if [ ! -z "${a}" ] ; then
+
+					# Vérifier si une règle existe déjà pour cette adresse
+					${IPT} -C ${CHAIN} ${w} ${net}/${CIDR} ${a} 2>/dev/null >/dev/null
+					if [ $? -ne 0 ] ; then
+
+						# Mise en place de la règle de blocage
+						${IPT} -A ${CHAIN} ${w} ${net}/${CIDR} ${a}
+
+						# Planification du déblocage
+						if [ "${ENABLE_UNBAN}" = "1" ] ; then
+							echo "${TSP} ${IPT} -D ${CHAIN} ${w} ${net}/${CIDR} ${a} 2>/dev/null >/dev/null" |at now +${duration} min 2>/dev/null
+						fi
+
+						# Syslog
+						log "'${net}/${CIDR}' + '${filter}' + '${criteria}' => BANNED ${s}"
+
+					else # La règle existe déjà
+
+						# Syslog
+						log "'${net}/${CIDR}' + '${filter}' + '${criteria}' => already banned ${s,,}"
+
+					fi
+
+				fi
+
+			done
+
+		fi
+
+	fi
+
+done

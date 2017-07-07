@@ -1,0 +1,25 @@
+#!/bin/bash
+
+. /usr/local/simpleban/sban.lib
+
+########################################################################
+
+[ -z "${1}" ] && die 'filter name required'
+filter=${1}
+
+########################################################################
+
+load_conf
+load_filter ${filter}
+
+########################################################################
+
+tail -n0 -F ${LOG} |while read LINE ; do
+	addr=$(echo "${LINE}" |${SEARCH_CMD} "${SEARCH}" |${EXTRACT_CMD} "${EXTRACT}")
+	if [ "${addr}" != "" ] ; then
+		if [ "${ENABLE_LOG_IF_MATCH}" = "1" ] ; then
+			log "'${addr}' + '${filter}' => MATCH => ${LINE}"
+		fi
+		${TSP} ${BLOCKER} ${filter} ${addr}
+	fi
+done

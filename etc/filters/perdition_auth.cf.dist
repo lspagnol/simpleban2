@@ -1,0 +1,20 @@
+# Perdition (authentification)
+
+LOG='/var/log/perdition.log'
+
+SEARCH=': Auth: .*status="failed.*'
+EXTRACT='s/^.*: Auth: // ; s/->.*// ; s/:[0-9]*$//'
+
+ADDR_TRIGGERS='
+5:2:86400
+60:5:86400
+3600:8:86400
+'
+
+NET_TRIGGERS='86400:2:86400'
+
+ACTION_IN='-p tcp -m multiport --dports 143,993,110,995'
+#ACTION_IN='-j DROP'
+ACTION_OUT='-j DROP'
+
+ENABLE_BAN=0

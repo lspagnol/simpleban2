@@ -1,0 +1,88 @@
+# EXEMPLE => authentification / SSHD
+
+# ATTENTION: le nom d'un filtre ne doit pas dépasser 32 caractères !
+
+# Fichier de log à surveiller
+LOG='/var/log/auth.log'
+
+########################################################################
+# Critères de déclenchement (par adresse) et durée de blocage
+
+# La variable peut contenir plusieurs critères, ils seront évalués dans
+# l'ordre. Si une correspondance est trouvée, les critères suivants ne
+# sont pas évaluées. Les critères doivent être séparés par un espace ou
+# un retour à la ligne.
+
+# Un critère contient 3 éléments, le séparateur est le symbole ":".
+# => "A:B:C"
+# Rechercher les correspondances sur les 'A' dernières secondes.
+# 'B' est le nombre de correspondances sur les 'A' dernières secondes.
+# 'C' est la durée du blocage en secondes.
+
+#ADDR_TRIGGERS='60:5:3600'
+# => bloquer pendant 1 heure si 5 correspondances sont trouvées au cours
+#    des 60 dernières secondes.
+
+ADDR_TRIGGERS='
+10:2:3600
+60:5:3600
+3600:10:86400
+'
+
+########################################################################
+# Critères de déclenchement (par réseau) et durée de blocage
+
+# La définition des critères est la même que pour "ADDR_TRIGGERS", mais
+# la recherche est effectuée sur les réseaux. Les adresses de réseaux
+# calculées à partir des masques "CIDR_V4" et "CIDR_V6".
+# La recherche est effectuée sur le réseau à l'exclusion de l'adresse
+# elle même.
+
+NET_TRIGGERS='86400:2:86400'
+
+########################################################################
+# Commande de recherche (greg "PCRE", "extended", ...)
+
+#SEARCH_CMD='/bin/grep -P'
+#SEARCH_CMD='/bin/grep -E'
+
+########################################################################
+# Commande d'extraction
+
+#EXTRACT_CMD='/bin/sed'
+
+########################################################################
+# Motif de recherche
+
+SEARCH=' sshd\[[0-9]+\]: Failed password for invalid user '
+
+########################################################################
+# Motif d'extraction
+
+EXTRACT='s/^.*: Failed password for .* from // ; s/ port .*$//'
+
+########################################################################
+# Actions de blocage
+
+# Variable vide = pas de mise en place de règle iptables / ip6tables.
+# Vous ne devriez les activer que lorsque les motifs SONT AU POINT ... !
+
+# Pour bloquer un port specifique en entrée:
+ACTION_IN='-p tcp --dport 22 -j DROP'
+
+# Pour bloquer plusieurs ports en entrée:
+#ACTION_IN='-p tcp  -m multiport --dports 22,80,443'
+
+# Pour un blocage total en entrée:
+#ACTION_IN='-j DROP'
+
+# Bloquer les accès en sortie
+#ACTION_OUT='-j DROP'
+
+########################################################################
+# Activation de la mise en place des règles de blocage
+
+# Uniquement lorsque votre configuration est au point ... !
+
+#ENABLE_BAN=1
+ENABLE_BAN=0

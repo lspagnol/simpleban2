@@ -1,0 +1,20 @@
+# SSHD (authentification)
+
+LOG='/var/log/auth.log'
+
+SEARCH=' sshd\[[0-9]+\]: Failed password for .* from '
+EXTRACT='s/^.*: Failed password for .* from // ; s/ port .*$//'
+
+ADDR_TRIGGERS='
+5:2:86400
+60:5:86400
+3600:8:86400
+'
+
+NET_TRIGGERS='86400:2:86400'
+
+ACTION_IN='-p tcp --dport 22 -j DROP'
+#ACTION_IN='-j DROP'
+ACTION_OUT='-j DROP'
+
+ENABLE_BAN=0

@@ -1,0 +1,83 @@
+#!/bin/bash
+
+if [ -z "${1}" ] ; then
+cat<<EOF
+Usage: sban start|stop|restart|status [filter name]
+       sban filters|banned|flush
+
+EOF
+exit
+fi
+
+########################################################################
+
+. /usr/local/simpleban/sban.lib
+
+########################################################################
+
+load_conf
+init_db
+
+case ${1} in
+
+	start)
+		if [ "${2}" != "" ] ; then
+			parser_start ${2}
+		else
+			for filter in ${FILTERS} ; do
+				parser_start ${filter}
+			done
+		fi
+	;;
+
+	stop)
+		if [ "${2}" != "" ] ; then
+			parser_stop ${2}
+		else
+			for filter in ${FILTERS} ; do
+				parser_stop ${filter}
+			done
+		fi
+
+	;;
+
+	restart)
+		if [ "${2}" != "" ] ; then
+			parser_stop ${2}
+			parser_start ${2}
+		else
+			for filter in ${FILTERS} ; do
+				parser_stop ${filter}
+				sleep 1
+				parser_start ${filter}
+			done
+		fi
+	;;
+
+	status)
+		if [ "${2}" != "" ] ; then
+			parser_status ${2}
+		else
+			for filter in ${FILTERS} ; do
+				parser_status ${filter}
+			done
+		fi
+	;;
+
+	filters)
+		parser_list
+	;;
+
+	banned)
+		banned_list
+	;;
+
+	flush)
+		blocker_flush
+		echo "blocker is flushed"
+	;;
+
+esac
+
+
+		

@@ -1,0 +1,29 @@
+# Roundcube (authentification via reverse-proxy)
+
+LOG='/var/log/roundcube.log'
+
+SEARCH='IMAP Error: Login failed for .* LOGIN: LOGIN failed in /'
+EXTRACT='s/^.*(X-Forwarded-For: // ; s/)\. LOGIN: LOGIN failed in .*$//'
+
+ADDR_TRIGGERS='
+5:2:86400
+60:5:86400
+3600:8:86400
+'     
+
+NET_TRIGGERS='86400:2:86400'
+
+ACTION_IN='-p tcp -m multiport --dports 80,443 -j DROP'
+#ACTION_IN='-j DROP'
+ACTION_OUT='-j DROP'
+
+ENABLE_BAN=0
+
+# Remarques:
+# - Le motif d'extraction est prévu pour fonctionner sur un serveur web
+#   qui fonctionne derrière un reverse-proxy.
+# - Le backend DOIT transmettre ses logs au reverse-proxy.
+# - Modifier la configuration de Roundcube (config/config.inc.php):
+#   $config['log_logins'] = true;
+#   $config['log_session'] = true;
+
