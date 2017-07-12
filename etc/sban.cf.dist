@@ -160,5 +160,5 @@ WHITELIST='
 #FILTERS='sshd_auth,nginx_http403'
 
 FILTERS='
-sshd
+sshd_auth
 '
