@@ -30,7 +30,13 @@ EOF
 	delaycompress
 	sharedscripts
 	postrotate
-		invoke-rc.d rsyslog rotate > /dev/null
+
+		# Ubuntu 16.04
+		# invoke-rc.d rsyslog rotate > /dev/null
+
+		# Ubuntu 14.04
+		# reload rsyslog >/dev/null 2>&1 || true
+		
 	endscript
 }
 EOF
