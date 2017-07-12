@@ -18,8 +18,9 @@
  * ...
 
 ## Prérequis:
-Ce script a été écrit sur Ubuntu 14.04 LTS. Il fonctionne sur Ubuntu 16.04 LTS.
-Le script d'installation ajoute les paquets nécessaires.
+Ce script a été écrit sur Ubuntu 14.04 LTS.
+Il fonctionne sur Ubuntu 16.04 LTS.
+Le script **install.sh** ajoute les paquets nécessaires.
 
 ## Installation:
  * Télécharger les scripts: ``git clone https://github.com/lspagnol/simpleban2``
