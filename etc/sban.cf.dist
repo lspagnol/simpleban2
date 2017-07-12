@@ -102,7 +102,7 @@
 # elle même. Cette fonctionnalité permet de bloquer les réseaux dédiés
 # au scan ...
 
-NET_TRIGGERS="86400:2:86400"
+#NET_TRIGGERS="86400:2:86400"
 
 ########################################################################
 # Chaine netfilter (IPv4 et IPv6)
