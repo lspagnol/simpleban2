@@ -34,7 +34,7 @@ Le script **install.sh** ajoute les paquets nécessaires.
 * Le démon **sban** doit être redémarré lors de la rotation des logs.
 * Exemple de configuration pour ``/etc/logrotate.d/rsyslog``:
 
-``
+```
 # Ubuntu 14.04 LTS
 /var/log/postfix/postfix.log
 /var/log/perdition/perdition.log
@@ -78,8 +78,7 @@ Le script **install.sh** ajoute les paquets nécessaires.
                 service sban start >/dev/null 2>&1 || true       
         endscript
 }
-
-``
+```
 
 ## Contacts:
 Mail: laurent DOT spagnol AT univ-reims DOT fr
