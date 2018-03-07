@@ -81,5 +81,5 @@ Le script **install.sh** ajoute les paquets nécessaires.
 ```
 
 ## Contacts:
-Mail: laurent DOT spagnol AT univ-reims DOT fr
-Liste de diffusion / mailing-list: simpleban AT univ-reims DO fr
+* Mail: laurent DOT spagnol AT univ-reims DOT fr
+* Liste de diffusion / mailing-list: simpleban AT univ-reims DOT fr
