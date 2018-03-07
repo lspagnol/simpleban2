@@ -174,7 +174,7 @@ function get_pid {
 ps awx |grep " ${PARSER} ${1}$" |grep -v grep |awk '{print $1}'
 
 # Processus "tail"
-ps awx |grep " tail -n0 -F ${LOG}$" |grep -v grep |awk '{print $1}'
+ps awx |grep " tail -n0 -F /tmp/simpleban/${1}.log" |grep -v grep |awk '{print $1}'
 
 }
 
@@ -226,6 +226,11 @@ else
 	local r=$(parser_status ${1})
 	log "${r}"
 	echo "${r}"
+	if [ "${r}" = "stopped" ] ; then
+		if [ -f /tmp/simpleban/${1}.log ] ; then
+			rm /tmp/simpleban/${1}.log
+		fi
+	fi
 fi
 
 }

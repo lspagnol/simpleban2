@@ -12,9 +12,13 @@ filter=${1}
 load_conf
 load_filter ${filter}
 
+# Mise en place du lien symbolique pour le parseur de logs
+[ -d /tmp/simpleban ] || mkdir /tmp/simpleban
+ln -s ${LOG} /tmp/simpleban/${1}.log
+
 ########################################################################
 
-tail -n0 -F ${LOG} |while read LINE ; do
+tail -n0 -F /tmp/simpleban/${1}.log |while read LINE ; do
 	addr=$(echo "${LINE}" |${SEARCH_CMD} "${SEARCH}" |${EXTRACT_CMD} "${EXTRACT}")
 	if [ "${addr}" != "" ] ; then
 		if [ "${ENABLE_LOG_IF_MATCH}" = "1" ] ; then
