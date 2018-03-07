@@ -170,7 +170,11 @@ return 1
 
 function get_pid {
 
+# Processus "parser"
 ps awx |grep " ${PARSER} ${1}$" |grep -v grep |awk '{print $1}'
+
+# Processus "tail"
+ps awx |grep " tail -n0 -F ${LOG}$" |grep -v grep |awk '{print $1}'
 
 }
 
