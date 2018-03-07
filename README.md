@@ -30,4 +30,57 @@ Le script **install.sh** ajoute les paquets nécessaires.
 * Editer le fichier **/etc/simpleban/sban.cf**
 * Copiez / éditez les modèles de filtres: **/etc/simpleban/filters/**
 
+## ATTENTION à la rotation des logs
+* Le démon **sban** doit être redémarré lors de la rotation des logs.
+* Exemple de configuration pour ``/etc/logrotate.d/rsyslog``:
+
+``
+# Ubuntu 14.04 LTS
+/var/log/postfix/postfix.log
+/var/log/perdition/perdition.log
+/var/log/sban.log
+{
+        rotate 30
+        daily
+        dateext
+        missingok
+        notifempty
+        compress
+        delaycompress
+        sharedscripts
+        prerotate
+                service sban stop >/dev/null 2>&1 ||true
+        endscript
+        postrotate
+                reload rsyslog >/dev/null 2>&1 || true
+                service sban start >/dev/null 2>&1 || true       
+        endscript
+}
+
+# Ubuntu 16.04 LTS
+/var/log/postfix/postfix.log
+/var/log/perdition/perdition.log
+/var/log/sban.log
+{
+        rotate 30
+        daily
+        dateext
+        missingok
+        notifempty
+        compress
+        delaycompress
+        sharedscripts
+        prerotate
+                service sban stop >/dev/null 2>&1 ||true
+        endscript
+        postrotate
+                invoke-rc.d rsyslog rotate > /dev/null || true
+                service sban start >/dev/null 2>&1 || true       
+        endscript
+}
+
+``
+
+## Contacts:
 Mail: laurent DOT spagnol AT univ-reims DOT fr
+Liste de diffusion / mailing-list: simpleban AT univ-reims DO fr
