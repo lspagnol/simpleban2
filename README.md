@@ -32,31 +32,14 @@ Le script **install.sh** ajoute les paquets nécessaires.
 
 ## ATTENTION à la rotation des logs
 * Le démon **sban** doit être redémarré lors de la rotation des logs.
-* Exemple de configuration pour ``/etc/logrotate.d/rsyslog``:
+* Exemple de configuration de **logrotate** avec analyse des logs de Postfix, et Perdition:
+  * **/etc/simpleban/sban.cf** => `FILTERS='perdition_auth postfix_auth'`
+  * **/etc/simpleban/filters/perdition_auth.cf** => `LOG='/var/log/perdition/perdition.log'`
+  * **/etc/simpleban/filters/postfix_auth.cf** => `LOG='/var/log/postfix/postfix.log'`
 
+**/etc/logrotate.d/rsyslog**:
 ```
-# Ubuntu 14.04 LTS
-/var/log/postfix/postfix.log
-/var/log/perdition/perdition.log
-/var/log/sban.log
-{
-        rotate 30
-        daily
-        dateext
-        missingok
-        notifempty
-        compress
-        delaycompress
-        sharedscripts
-        prerotate
-                service sban stop >/dev/null 2>&1 ||true
-        endscript
-        postrotate
-                reload rsyslog >/dev/null 2>&1 || true
-                service sban start >/dev/null 2>&1 || true       
-        endscript
-}
-
+...
 # Ubuntu 16.04 LTS
 /var/log/postfix/postfix.log
 /var/log/perdition/perdition.log
@@ -78,6 +61,7 @@ Le script **install.sh** ajoute les paquets nécessaires.
                 service sban start >/dev/null 2>&1 || true       
         endscript
 }
+...
 ```
 
 ## Contacts:
