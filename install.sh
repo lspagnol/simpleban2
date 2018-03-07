@@ -32,10 +32,10 @@ EOF
 	postrotate
 
 		# Ubuntu 16.04
-		/usr/local/sbin/sban stop >/dev/null ; invoke-rc.d rsyslog rotate >/dev/null ; /usr/local/sbin/sban start >/dev/null
+		invoke-rc.d rsyslog rotate >/dev/null 2>&1 || true
 
 		# Ubuntu 14.04
-		# /usr/local/sbin/sban stop >/dev/null ; reload rsyslog >/dev/null 2>&1 || true ; /usr/local/sbin/sban start >/dev/null
+		# reload rsyslog >/dev/null 2>&1 || true
 		
 	endscript
 }
