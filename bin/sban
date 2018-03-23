@@ -4,6 +4,7 @@ if [ -z "${1}" ] ; then
 cat<<EOF
 Usage: sban start|stop|restart|status [filter name]
        sban filters|banned|flush
+       sban unban <IPv4|IPv6 address>
 
 EOF
 exit
@@ -75,6 +76,14 @@ case ${1} in
 	flush)
 		blocker_flush
 		echo "blocker is flushed"
+	;;
+
+	unban)
+		if [ -z "${2}" ] ; then
+			echo "Usage: sban unban <IPv4|IPv6 address>"
+			exit 0
+		fi
+		addr_unban ${2}
 	;;
 
 esac

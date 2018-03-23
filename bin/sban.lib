@@ -194,6 +194,27 @@ atrm $(atq |awk '{print $1}') 2>/dev/null
 
 }
 
+function addr_unban {
+
+local ip d q c
+ip=${1//./\\.}
+
+d=$(mktemp)
+
+for q in $(atq |awk '{print $1}') ; do 
+	c=$(at -c ${q} |egrep "ip(|6)tables" |grep " ${ip} ")
+	if [ ! -z "${c}" ] ; then
+		echo "${c}" > ${d}
+		chmod +x ${d}
+		bash -c ${d}
+		atrm ${q}
+	fi
+done
+
+rm ${d}
+
+}
+
 ########################################################################
 
 function parser_start {
