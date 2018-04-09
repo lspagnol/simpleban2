@@ -60,7 +60,12 @@ find /etc/simpleban/ -type f -exec chmod 640 {} \;
 find /etc/simpleban/ -type d -exec chmod 750 {} \;
 
 # Démarrage
+cat<<EOF
+
+Pour automatiser le démarrage de "Simpleban":
+
 cp /usr/local/simpleban/sban /etc/init.d
-if [ ! -d /var/lib/simpleban ] ; then
-	update-rc.d -f sban defaults
-fi
+update-rc.d -f sban defaults
+
+EOF
+
