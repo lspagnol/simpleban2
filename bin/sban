@@ -4,6 +4,7 @@ if [ -z "${1}" ] ; then
 cat<<EOF
 Usage: sban start|stop|restart|status [filter name]
        sban filters|banned|flush
+       sban check <IPv4|IPv6 address>
        sban unban <IPv4|IPv6 address>
 
 EOF
@@ -84,6 +85,17 @@ case ${1} in
 			exit 0
 		fi
 		addr_unban ${2}
+	;;
+
+	check)
+		if [ -z "${2}" ] ; then
+			echo "Usage: sban check <IPv4|IPv6 address>"
+			exit 0
+		fi
+		echo -n "${2} is "
+		banned_list |grep -q "^${2//./\\.}"
+		[ $? -eq 0 ] || echo -n "not "
+		echo "banned"
 	;;
 
 esac
