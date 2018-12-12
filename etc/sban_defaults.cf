@@ -16,6 +16,8 @@ BLOCKER=${BINDIR}/sban-addr_blocker
 VARDIR=/var/lib/simpleban
 DB=${VARDIR}/sban.db
 
+PRUNE_DB=30
+
 TSP='/usr/bin/tsp -nf'
 
 IPT4='/sbin/iptables'

@@ -25,6 +25,9 @@
 #VARDIR=/var/lib/simpleban
 #DB=${VARDIR}/sban.db
 
+# Durée de rétention des données dans la base (en jours)
+#PRUNE_DB=30
+
 ########################################################################
 # Commandes
 

@@ -62,10 +62,13 @@ find /etc/simpleban/ -type d -exec chmod 750 {} \;
 # Démarrage
 cat<<EOF
 
-Pour automatiser le démarrage de "Simpleban":
-
+* Pour automatiser le démarrage de "Simpleban":
 cp /usr/local/simpleban/sban /etc/init.d
 update-rc.d -f sban defaults
+
+* Pour automatiser la purge automatique de la base de données:
+ln -s /usr/local/simpleban/sban-vacuum /etc/cron.daily
+Editer la variable 'PRUNE_DB' dans '/etc/sban/sban.cf' pour ajuster la durée de rétention.
 
 EOF
 
