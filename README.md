@@ -19,7 +19,7 @@
 
 ## Prérequis:
 Ce script a été écrit sur Ubuntu 14.04 LTS.
-Il fonctionne sur Ubuntu 16.04 LTS.
+Il fonctionne sur Ubuntu 16.04 LTS et Ubuntu 18.04 LTS.
 Le script **install.sh** ajoute les paquets nécessaires.
 
 ## Installation:
