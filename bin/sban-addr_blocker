@@ -111,7 +111,7 @@ for criteria in ${ADDR_TRIGGERS} ; do
 					# Vérifier si une règle existe déjà pour cette adresse
 					case ${MODE} in
 						l2)
-							${EBT} -L ${CHAIN} |egrep -q "^\-p ${proto} ${ww} ${addr} ${a}$"
+							${EBT} -L ${CHAIN} |egrep -q "^\-p ${proto} ${ww} ${addr//./\\.} ${a}$"
 						;;
 						l3)
 							${IPT} -C ${CHAIN} ${w} ${addr} ${a} 2>/dev/null >/dev/null
@@ -243,7 +243,7 @@ for criteria in ${NET_TRIGGERS} ; do
 					# Vérifier si une règle existe déjà pour ce réseau
 					case ${MODE} in
 						l2)
-							${EBT} -L ${CHAIN} |egrep -q "^\-p ${proto} ${ww} ${net}/${CIDR} ${a}$"
+							${EBT} -L ${CHAIN} |egrep -q "^\-p ${proto} ${ww} ${net//./\\.}/${CIDR} ${a}$"
 						;;
 						l3)
 							${IPT} -C ${CHAIN} ${w} ${net}/${CIDR} ${a} 2>/dev/null >/dev/null
