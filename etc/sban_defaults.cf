@@ -9,9 +9,10 @@
 #                                                                      #
 ########################################################################
 
-BINDIR=/usr/local/simpleban
+BINDIR=/opt/simpleban
 PARSER=${BINDIR}/sban-log_parser
 BLOCKER=${BINDIR}/sban-addr_blocker
+SQLITE=/usr/bin/sqlite3
 
 VARDIR=/var/lib/simpleban
 DB=${VARDIR}/sban.db
@@ -20,8 +21,10 @@ PRUNE_DB=30
 
 TSP='/usr/bin/tsp -nf'
 
+MODE=l3
 IPT4='/sbin/iptables'
 IPT6='/sbin/ip6tables'
+EBT='/sbin/ebtables'
 
 SEARCH_CMD='/bin/grep -E'
 EXTRACT_CMD='/bin/sed'

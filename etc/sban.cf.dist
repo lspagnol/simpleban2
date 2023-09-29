@@ -16,11 +16,22 @@
 # chaque fichier de configuration de filtre.
 
 ########################################################################
+# Mode de fonctionnement (par défaut: 'l3')
+
+# MODE='l3': niveau 3/iptables
+# MODE='l2': niveau 2/ebtables
+# Le filtrage niveau 2 permet de filtrer les paquets qui transitent par
+# les bridges -> recommandé pour les hyperviseurs
+
+#MODE='l2'
+
+########################################################################
 # Répertoires et fichiers
 
-#BINDIR=/usr/local/simpleban
+#BINDIR=/opt/simpleban
 #PARSER=${BINDIR}/sban-log_parser
 #BLOCKER=${BINDIR}/sban-addr_blocker
+#SQLITE=/usr/bin/sqlite3
 
 #VARDIR=/var/lib/simpleban
 #DB=${VARDIR}/sban.db
@@ -34,9 +45,10 @@
 # Task-Spooler (sérialisation des commandes)
 #TSP='/usr/bin/tsp -nf'
 
-# Netfilter
+# Netfilter (iptables & ebtables)
 #IPT4='/sbin/iptables'
 #IPT6='/sbin/ip6tables'
+#EBT='/sbin/ebtables'
 
 # Commande de recherche (greg "PCRE", "extended", ...)
 #SEARCH_CMD='/bin/grep -P'

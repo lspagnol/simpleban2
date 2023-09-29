@@ -8,7 +8,7 @@ if [ ! -d /var/lib/simpleban ] ; then
 	chmod 750 /var/lib/simpleban
 
 	# Installation dépendances
-	apt-get -y install task-spooler sipcalc iptables sqlite host whois
+	apt-get -y install task-spooler sipcalc iptables ebtables sqlite3 host whois
 
 	# Configuration syslog
 	sed -i 's/\(^\)\($RepeatedMsgReduction\)\(.*\)/#\2\3\n$RepeatedMsgReduction off/g' /etc/rsyslog.conf
@@ -28,8 +28,10 @@ EOF
 	notifempty
 	compress
 	delaycompress
-	sharedscripts
 	postrotate
+
+		# Debian 11
+		/usr/lib/rsyslog/rsyslog-rotate
 
 		# Ubuntu 16.04
 		invoke-rc.d rsyslog rotate >/dev/null 2>&1 || true
@@ -44,11 +46,11 @@ EOF
 fi
 
 # Programme
-[ -d /usr/local/simpleban ] || mkdir /usr/local/simpleban
-cp bin/* /usr/local/simpleban
-chmod 750 /usr/local/simpleban
-chmod 750 /usr/local/simpleban/*
-ln -fs /usr/local/simpleban/sban /usr/local/sbin/sban
+[ -d /opt/simpleban ] || mkdir /opt/simpleban
+cp bin/* /opt/simpleban
+chmod 750 /opt/simpleban
+chmod 750 /opt/simpleban/*
+ln -fs /opt/simpleban/sban /usr/local/sbin/sban
 
 # Configuration
 [ -d /etc/simpleban ] || mkdir /etc/simpleban
@@ -63,11 +65,11 @@ find /etc/simpleban/ -type d -exec chmod 750 {} \;
 cat<<EOF
 
 * Pour automatiser le démarrage de "Simpleban":
-cp /usr/local/simpleban/sban /etc/init.d
+cp /opt/simpleban/sban /etc/init.d
 update-rc.d -f sban defaults
 
 * Pour automatiser la purge automatique de la base de données:
-ln -s /usr/local/simpleban/sban-vacuum /etc/cron.daily
+ln -s /opt/simpleban/sban-vacuum /etc/cron.daily
 Editer la variable 'PRUNE_DB' dans '/etc/sban/sban.cf' pour ajuster la durée de rétention.
 
 EOF

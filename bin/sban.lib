@@ -64,17 +64,17 @@ fi
 # Création db
 if [ ! -f ${DB} ] ; then
 
-	sqlite ${DB} "create table logV4 (epoch BIGINT NOT NULL,addr CHAR(40) NOT NULL,net CHAR(40),filter CHAR(32));"
-	sqlite ${DB} "CREATE INDEX epochV4 ON logV4 (epoch);"
-	sqlite ${DB} "CREATE INDEX addrV4 ON logV4 (addr);"
-	sqlite ${DB} "CREATE INDEX netV4 ON logV4 (net);"
-	sqlite ${DB} "CREATE INDEX filterV4 ON logV4 (filter);"
+	${SQLITE} ${DB} "create table logV4 (epoch BIGINT NOT NULL,addr CHAR(40) NOT NULL,net CHAR(40),filter CHAR(32));"
+	${SQLITE} ${DB} "CREATE INDEX epochV4 ON logV4 (epoch);"
+	${SQLITE} ${DB} "CREATE INDEX addrV4 ON logV4 (addr);"
+	${SQLITE} ${DB} "CREATE INDEX netV4 ON logV4 (net);"
+	${SQLITE} ${DB} "CREATE INDEX filterV4 ON logV4 (filter);"
 
-	sqlite ${DB} "create table logV6 (epoch BIGINT NOT NULL,addr CHAR(16) NOT NULL,net CHAR(16),filter CHAR(32));"
-	sqlite ${DB} "CREATE INDEX epochV6 ON logV6 (epoch);"
-	sqlite ${DB} "CREATE INDEX addrV6 ON logV6 (addr);"
-	sqlite ${DB} "CREATE INDEX netV6 ON logV6 (net);"
-	sqlite ${DB} "CREATE INDEX filterV6 ON logV6 (filter);"
+	${SQLITE} ${DB} "create table logV6 (epoch BIGINT NOT NULL,addr CHAR(16) NOT NULL,net CHAR(16),filter CHAR(32));"
+	${SQLITE} ${DB} "CREATE INDEX epochV6 ON logV6 (epoch);"
+	${SQLITE} ${DB} "CREATE INDEX addrV6 ON logV6 (addr);"
+	${SQLITE} ${DB} "CREATE INDEX netV6 ON logV6 (net);"
+	${SQLITE} ${DB} "CREATE INDEX filterV6 ON logV6 (filter);"
 
 fi
 }
@@ -84,10 +84,12 @@ fi
 function addr_type {
 
 if [ "${1//./}" = "${1}" ] ; then
+	proto="IPv6"
 	IPT="${IPT6}"
 	TABLE="logV6"
 	CIDR="${CIDR_V6}"
 else
+	proto="IPv4"
 	IPT="${IPT4}"
 	TABLE="logV4"
 	CIDR="${CIDR_V4}"
@@ -180,38 +182,54 @@ ps awx |grep " tail -n0 -F /tmp/simpleban/${1}.log" |grep -v grep |awk '{print $
 
 function banned_list {
 
-${IPT4} -nL ${CHAIN} |egrep -v '^(Chain|target)' |awk '{print $4" "$5}' |sed 's/^0.0.0.0\/0 //g ; s/ 0.0.0.0\/0$//g'|awk '{print $1}' |sort |uniq
-${IPT6} -nL ${CHAIN} |egrep -v '^(Chain|target)' |awk '{print $3" "$4}' |sed 's/^::\/0 //g ; s/ ::\/0$//g' |awk '{print $1}' |sort |uniq
+#${IPT4} -nL ${CHAIN} |egrep -v '^(Chain|target)' |awk '{print $4" "$5}' |sed 's/^0.0.0.0\/0 //g ; s/ 0.0.0.0\/0$//g'|awk '{print $1}' |sort |uniq
+#${IPT6} -nL ${CHAIN} |egrep -v '^(Chain|target)' |awk '{print $3" "$4}' |sed 's/^::\/0 //g ; s/ ::\/0$//g' |awk '{print $1}' |sort |uniq
+
+# Le format de sortie 'iptables' -nL des versions récentes a été modifié
+# On supprime le CIDR si le blocage est sur une adresse IP et pas un réseau
+
+${IPT4} -S ${CHAIN} |grep -v '\-N ' |awk '{print $4}' |sed 's/\/32$//g' |sort |uniq
+${EBT} -L ${CHAIN} |grep '^\-p IPv4 ' |awk '{print $4}' |sort |uniq
+
+${IPT6} -S ${CHAIN} |grep -v '\-N ' |awk '{print $4}' |sed 's/\/128$//g' |sort |uniq
+${EBT} -L ${CHAIN} |grep '^\-p IPv6 ' |awk '{print $4}' |sort |uniq
 
 }
 
 function blocker_flush {
 
-${IPT4} -F ${CHAIN}
-${IPT6} -F ${CHAIN}
+# Règles mises en place en mode "l3/iptables"
+${IPT4} -F ${CHAIN} 2>/dev/null
+${IPT6} -F ${CHAIN} 2>/dev/null
 
-atrm $(atq |awk '{print $1}') 2>/dev/null
+# Règles mises en place en mode "l2/ebtables"
+${EBT} -F ${CHAIN} 2>/dev/null
+
+find /var/spool/cron/atjobs/* -type f -delete
 
 }
 
 function addr_unban {
 
-local ip d q c
-ip=${1//./\\.}
+local f t
 
-d=$(mktemp)
-
-for q in $(atq |awk '{print $1}') ; do 
-	c=$(at -c ${q} |egrep "ip(|6)tables" |grep " ${ip} ")
-	if [ ! -z "${c}" ] ; then
-		echo "${c}" > ${d}
-		chmod +x ${d}
-		bash -c ${d}
-		atrm ${q}
+# Règles mises en place en mode "l3/iptables"
+for f in s d ; do
+	t=$(grep " \-${f} ${1} " /var/spool/cron/atjobs/* 2>/dev/null |cut -d: -f1)
+	if [ ! -z "${t}" ] ; then
+		bash ${t}
+		rm ${t}
 	fi
 done
 
-rm ${d}
+# Règles mises en place en mode "l2/ebtables"
+for f in src dst ; do
+	t=$(egrep " --ip(|6)-${f} ${1} " /var/spool/cron/atjobs/* 2>/dev/null |cut -d: -f1)
+	if [ ! -z "${t}" ] ; then
+		bash ${t}
+		rm ${t}
+	fi
+done
 
 }
 

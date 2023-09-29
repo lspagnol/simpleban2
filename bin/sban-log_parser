@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. /usr/local/simpleban/sban.lib
+. /opt/simpleban/sban.lib
 
 ########################################################################
 
@@ -14,7 +14,7 @@ load_filter ${filter}
 
 # Mise en place du lien symbolique pour le parseur de logs
 [ -d /tmp/simpleban ] || mkdir /tmp/simpleban
-ln -s ${LOG} /tmp/simpleban/${1}.log
+ln -fs ${LOG} /tmp/simpleban/${1}.log
 
 ########################################################################
 
