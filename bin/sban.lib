@@ -182,12 +182,7 @@ ps awx |grep " tail -n0 -F /tmp/simpleban/${1}.log" |grep -v grep |awk '{print $
 
 function banned_list {
 
-#${IPT4} -nL ${CHAIN} |egrep -v '^(Chain|target)' |awk '{print $4" "$5}' |sed 's/^0.0.0.0\/0 //g ; s/ 0.0.0.0\/0$//g'|awk '{print $1}' |sort |uniq
-#${IPT6} -nL ${CHAIN} |egrep -v '^(Chain|target)' |awk '{print $3" "$4}' |sed 's/^::\/0 //g ; s/ ::\/0$//g' |awk '{print $1}' |sort |uniq
-
-# Le format de sortie 'iptables' -nL des versions récentes a été modifié
 # On supprime le CIDR si le blocage est sur une adresse IP et pas un réseau
-
 ${IPT4} -S ${CHAIN} |grep -v '\-N ' |awk '{print $4}' |sed 's/\/32$//g' |sort |uniq
 ${EBT} -L ${CHAIN} |grep '^\-p IPv4 ' |awk '{print $4}' |sort |uniq
 
