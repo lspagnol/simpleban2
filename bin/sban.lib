@@ -182,12 +182,19 @@ ps awx |grep " tail -n0 -F /tmp/simpleban/${1}.log" |grep -v grep |awk '{print $
 
 function banned_list {
 
-# On supprime le CIDR si le blocage est sur une adresse IP et pas un réseau
-${IPT4} -S ${CHAIN} |grep -v '\-N ' |awk '{print $4}' |sed 's/\/32$//g' |sort |uniq
-${EBT} -L ${CHAIN} |grep '^\-p IPv4 ' |awk '{print $4}' |sort |uniq
+# iptables: on supprime le CIDR si le blocage est sur une adresse IP et pas un réseau
 
-${IPT6} -S ${CHAIN} |grep -v '\-N ' |awk '{print $4}' |sed 's/\/128$//g' |sort |uniq
-${EBT} -L ${CHAIN} |grep '^\-p IPv6 ' |awk '{print $4}' |sort |uniq
+# Adresses & réseaux IPv4
+{ 
+	${IPT4} -S ${CHAIN} 2>/dev/null |grep -v '\-N ' |awk '{print $4}' |sed 's/\/32$//g' ; 
+    ${EBT} -L ${CHAIN} 2>/dev/null |grep '^\-p IPv4 ' |awk '{print $4}' ;
+} |sort -n |uniq
+
+# Adresses & réseaux IPv6
+{
+	${IPT6} -S ${CHAIN} 2>/dev/null |grep -v '\-N ' |awk '{print $4}' |sed 's/\/128$//g' ;
+	${EBT} -L ${CHAIN} 2>/dev/null |grep '^\-p IPv6 ' |awk '{print $4}' |sort |uniq ;
+} |sort -n |uniq
 
 }
 
