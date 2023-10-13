@@ -24,8 +24,8 @@
  * ...
 
 ## Prérequis:
-Ce script a été écrit à l'origine sur Ubuntu 14.04 LTS, il a été testé
-sur Debian 12.
+**simpleban** a été écrit à l'origine sur Ubuntu 14.04 LTS, il a été testé
+récemment sur Ubuntu 20.04 Debian 12.
 Le script **install.sh** ajoute les paquets nécessaires.
 
 ## Installation:
@@ -33,8 +33,15 @@ Le script **install.sh** ajoute les paquets nécessaires.
  * Installer les scripts: ``cd simpleban2 ; bash install.sh``
 
 ## Configuration
-* Editer le fichier **/etc/simpleban/sban.cf**
-* Copiez / éditez les modèles de filtres: **/etc/simpleban/filters/**
+ * Editer le fichier **/etc/simpleban/sban.cf**
+ * Copiez / éditez les modèles de filtres: **/etc/simpleban/filters/**
+ * Choix du mode de fonctionnement:
+   * l3 / iptables (par défaut) => adapté aux stations et à la virtualisation si les invités ne sont pas bridgés sur une interface physique (NAT depuis l'hôte),
+   * l2 / iptabes => adapté aux hyperviseurs si les invités sont bridgés sur une interface physique.
+
+## Migration de SQLite2 à SQLite3
+* Vérifier le format de la base: ``file /var/lib/simpleban``
+* Convertir la base si nécessaire: ``sqlite /var/lib/simpleban/sban.db .dump | sqlite3 /var/lib/simpleban/new.db ; mv /var/lib/simpleban/new.db /var/lib/simpleban/sban.db``
 
 ## ATTENTION à la rotation des logs
 * Le démon **sban** doit être redémarré lors de la rotation des logs.
