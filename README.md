@@ -36,8 +36,8 @@ Le script **install.sh** ajoute les paquets nécessaires.
  * Editer le fichier **/etc/simpleban/sban.cf**
  * Copiez / éditez les modèles de filtres: **/etc/simpleban/filters/**
  * Choix du mode de fonctionnement:
-   * l3 / iptables (par défaut) => adapté aux stations et à la virtualisation si les invités ne sont pas bridgés sur une interface physique (NAT depuis l'hôte),
-   * l2 / iptabes => adapté aux hyperviseurs si les invités sont bridgés sur une interface physique.
+   * l3 / iptables (par défaut) => adapté aux stations et à la virtualisation si les invités ne sont pas bridgés sur une interface physique (NAT depuis l'hôte, les invités ne sont pas joignables directement depuis le réseau),
+   * l2 / ebtables => adapté aux hyperviseurs si les invités sont bridgés sur une interface physique (les invités sont joignables directement depuis le réseau).
 
 ## Migration de SQLite2 à SQLite3
 * Vérifier le format de la base: ``file /var/lib/simpleban``
