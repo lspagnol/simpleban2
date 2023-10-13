@@ -1,16 +1,5 @@
 #!/bin/bash
 
-if [ -z "${1}" ] ; then
-cat<<EOF
-Usage: sban start|stop|restart|status [filter name]
-       sban filters|banned|flush
-       sban check <IPv4|IPv6 address>
-       sban unban <IPv4|IPv6 address>
-
-EOF
-exit
-fi
-
 ########################################################################
 
 . /opt/simpleban/sban.lib
@@ -20,9 +9,17 @@ fi
 load_conf
 init_db
 
+########################################################################
+
 case ${1} in
 
 	start)
+
+		# Initialisation
+		init_db
+		init_nf
+
+		# Démarrage du parseur de logs
 		if [ "${2}" != "" ] ; then
 			parser_start ${2}
 		else
@@ -30,9 +27,15 @@ case ${1} in
 				parser_start ${filter}
 			done
 		fi
+
+		# Activation du blocage
+		ban_enable
+		ban_status
 	;;
 
 	stop)
+
+		# Arrêt du parseur de logs
 		if [ "${2}" != "" ] ; then
 			parser_stop ${2}
 		else
@@ -40,10 +43,17 @@ case ${1} in
 				parser_stop ${filter}
 			done
 		fi
+		ban_status
 
 	;;
 
 	restart)
+
+		# Initialisation (au cas ou ...)
+		init_db
+		init_nf
+
+		# Redémarrage du parseur de logs
 		if [ "${2}" != "" ] ; then
 			parser_stop ${2}
 			parser_start ${2}
@@ -54,9 +64,16 @@ case ${1} in
 				parser_start ${filter}
 			done
 		fi
+
+		# Activation du blocage
+		ban_enable
+		ban_status
+
 	;;
 
 	status)
+
+		# Etat du parseur de logs
 		if [ "${2}" != "" ] ; then
 			parser_status ${2}
 		else
@@ -64,41 +81,105 @@ case ${1} in
 				parser_status ${filter}
 			done
 		fi
+		ban_status
 	;;
 
 	filters)
+
+		# Liste des filtres configurés
 		parser_list
+
 	;;
 
 	banned)
+
+		# Liste des adresses bloquées
 		banned_list
+
 	;;
 
 	flush)
+
+		# Déblocage de toutes les adresses
 		blocker_flush
 		echo "blocker is flushed"
+
+	;;
+
+	full-flush)
+
+		# Déblocage de toutes les adresses + purge historique
+		blocker_flush
+		blocker_flush_db
+		echo "blocker is flushed"
+
 	;;
 
 	unban)
+
+		# Déblocage d'une adresse
 		if [ -z "${2}" ] ; then
 			echo "Usage: sban unban <IPv4|IPv6 address>"
 			exit 0
 		fi
 		addr_unban ${2}
+		addr_check ${2}
+
+	;;
+
+	full-unban)
+
+		# Déblocage d'un adresse + suppression de l'historique
+		if [ -z "${2}" ] ; then
+			echo "Usage: sban full-unban <IPv4|IPv6 address>"
+			exit 0
+		fi
+		addr_unban ${2}
+		addr_unban_db ${2}
+		addr_check ${2}
+
 	;;
 
 	check)
+
+		# Vérifier le blocage d'une adresse
 		if [ -z "${2}" ] ; then
 			echo "Usage: sban check <IPv4|IPv6 address>"
 			exit 0
 		fi
-		echo -n "${2} is "
-		banned_list |grep -q "^${2//./\\.}"
-		[ $? -eq 0 ] || echo -n "not "
-		echo "banned"
+		addr_check ${2}
+
+	;;
+
+	enable)
+
+		# Activer le blocage
+		ban_enable
+		ban_status
+
+	;;
+
+	disable)
+
+		# Activer le blocage sans supprimer les adresses
+		ban_disable
+		ban_status
+
+	;;
+
+	*)
+		cat<<EOT
+Usage: sban start|stop|restart|status [filter name]
+       sban filters
+       sban enable|disable
+       sban banned|flush|full-flush
+       sban check <IPv4|IPv6 address>
+       sban unban <IPv4|IPv6 address>
+       sban full-unban <IPv4|IPv6 address>
+
+EOT
+		exit
 	;;
 
 esac
 
-
-		

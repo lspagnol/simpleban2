@@ -1,13 +1,13 @@
 #!/bin/bash
 
+########################################################################
+
 . /opt/simpleban/sban.lib
 
 ########################################################################
 
 [ -z "${1}" ] && die 'filter name required'
 filter=${1}
-
-########################################################################
 
 load_conf
 load_filter ${filter}
@@ -17,6 +17,8 @@ load_filter ${filter}
 ln -fs ${LOG} /tmp/simpleban/${1}.log
 
 ########################################################################
+
+# Boucle infinie du parseur de logs
 
 tail -n0 -F /tmp/simpleban/${1}.log |while read LINE ; do
 	addr=$(echo "${LINE}" |${SEARCH_CMD} "${SEARCH}" |${EXTRACT_CMD} "${EXTRACT}")

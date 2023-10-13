@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# apt -y install mmdb-bin -> 
+
 # 1ère exécution du script d'installation ?
 if [ ! -d /var/lib/simpleban ] ; then
 
@@ -8,7 +10,7 @@ if [ ! -d /var/lib/simpleban ] ; then
 	chmod 750 /var/lib/simpleban
 
 	# Installation dépendances
-	apt-get -y install task-spooler sipcalc iptables ebtables sqlite3 host whois
+	apt-get -y install task-spooler sipcalc iptables ebtables sqlite3 host whois mmdb-bin
 
 	# Configuration syslog
 	sed -i 's/\(^\)\($RepeatedMsgReduction\)\(.*\)/#\2\3\n$RepeatedMsgReduction off/g' /etc/rsyslog.conf
@@ -34,7 +36,7 @@ EOF
 		/usr/lib/rsyslog/rsyslog-rotate
 
 		# Ubuntu 16.04
-		invoke-rc.d rsyslog rotate >/dev/null 2>&1 || true
+		# invoke-rc.d rsyslog rotate >/dev/null 2>&1 || true
 
 		# Ubuntu 14.04
 		# reload rsyslog >/dev/null 2>&1 || true

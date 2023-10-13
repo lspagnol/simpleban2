@@ -56,7 +56,6 @@ function load_filter {
 function init_db {
 
 # Création répertoire db
-
 if [ ! -d ${VARDIR} ] ; then
 	mkdir ${VARDIR} ; chown root:root ${VARDIR} ; chmod 750 ${VARDIR}
 fi
@@ -77,6 +76,92 @@ if [ ! -f ${DB} ] ; then
 	${SQLITE} ${DB} "CREATE INDEX filterV6 ON logV6 (filter);"
 
 fi
+}
+
+function init_nf {
+
+local p
+
+# Création de la chaine de blocage si nécessaire
+case ${MODE} in
+	l2)
+		${EBT} -L ${CHAIN} 2>/dev/null >/dev/null || ${EBT} -N ${CHAIN} 2>/dev/null >/dev/null
+	;;
+	l3)
+		for p in ${IPT4} ${IPT6} ; do
+			${p} -nL ${CHAIN} 2>/dev/null >/dev/null || ${p} -N ${CHAIN} 2>/dev/null >/dev/null
+		done
+	;;
+esac
+
+}
+
+function ban_enable {
+
+local c p
+
+case ${MODE} in
+	l2)
+		for c in INPUT FORWARD OUTPUT ; do
+			${EBT} -L ${c} |grep -q "^-j ${CHAIN}$" || ${EBT} -I ${c} -j ${CHAIN}
+		done
+	;;
+	l3)
+		for c in INPUT FORWARD OUTPUT ; do
+			for p in ${IPT4} ${IPT6} ; do
+				${p} -S ${c} |grep -q "^-A ${c} -j ${CHAIN}$" || ${p} -I ${c} -j ${CHAIN}
+			done
+		done
+	;;
+esac
+
+}
+
+function ban_disable {
+
+local c p
+
+case ${MODE} in
+	l2)
+		for c in INPUT FORWARD OUTPUT ; do
+			${EBT} -L ${c} |grep -q "^-j ${CHAIN}$" && ${EBT} -D ${c} -j ${CHAIN}
+		done
+	;;
+	l3)
+		for c in INPUT FORWARD OUTPUT ; do
+			for p in ${IPT4} ${IPT6} ; do
+				${p} -S ${c} |grep -q "^-A ${c} -j ${CHAIN}$" && ${p} -D ${c} -j ${CHAIN}
+			done
+		done
+	;;
+esac
+
+}
+
+function ban_status {
+local c p i
+
+case ${MODE} in
+	l2)
+		for c in INPUT FORWARD OUTPUT ; do
+			echo -n "l2 ${CHAIN} ${c} is "
+			${EBT} -L ${c} |grep -q "^-j ${CHAIN}$" && echo "enabled" || echo "disabled"
+		done
+	;;
+	l3)
+		for c in INPUT FORWARD OUTPUT ; do
+			for i in IPv4 IPv6 ; do
+				case ${i} in
+					IPv4) p=${IPT4};;
+					IPv6) p=${IPT6};;
+				esac
+				echo -n "l3 ${i} ${CHAIN} ${c} is "
+				${p} -S ${c} |grep -q "^-A ${c} -j ${CHAIN}$" && echo "enabled" || echo "disabled"
+			done
+		done
+	;;
+esac
+
 }
 
 ########################################################################
@@ -211,6 +296,25 @@ find /var/spool/cron/atjobs/* -type f -delete
 
 }
 
+function blocker_flush_db {
+
+local t
+for t in logV4 logV6 ; do
+	${SQLITE} ${DB} "DELETE from ${t};"
+done
+
+}
+
+
+function addr_check {
+
+echo -n "${1} is "
+banned_list |grep -q "^${1//./\\.}"
+[ $? -eq 0 ] || echo -n "not "
+echo "banned"
+
+}
+
 function addr_unban {
 
 local f t
@@ -232,6 +336,13 @@ for f in src dst ; do
 		rm ${t}
 	fi
 done
+
+}
+
+function addr_unban_db {
+
+addr_type ${1}
+${SQLITE} ${DB} "DELETE from ${TABLE} WHERE addr='${1}';"
 
 }
 

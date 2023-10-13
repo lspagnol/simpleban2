@@ -1,14 +1,21 @@
 #!/bin/bash
 
+########################################################################
+
 . /opt/simpleban/sban.lib
 
+########################################################################
+
 load_conf
+
+########################################################################
 
 # Calcul du timestamp maxi pour la purge des enregistrements
 max_epoch=$(( $(date +%s) - $(( ${PRUNE_DB} * 86400 )) ))
 
 echo "- Size of database '${DB}': $(du -h ${DB} |awk '{print $1}')"
 
+# Purge des enregistrement les plus anciens
 for table in logV4 logV6 ; do
         echo -n "- Delete records older than '$(date -d @${max_epoch})' on table '${table}' ... "
         echo -n "$(${SQLITE} ${DB} "SELECT count(*) FROM ${table} WHERE '${max_epoch}' >= epoch;") records ... "
@@ -16,6 +23,7 @@ for table in logV4 logV6 ; do
         echo "done."
 done
 
+# Compactage de la base SQLite
 sban stop
 echo -n "- Vacuum database '${DB}' ... "
 ${SQLITE} ${DB} "VACUUM;"

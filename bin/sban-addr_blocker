@@ -1,5 +1,7 @@
 #!/bin/bash
 
+########################################################################
+
 . /opt/simpleban/sban.lib
 
 ########################################################################
@@ -9,8 +11,6 @@ addr=${2}
 
 [ -z "${1}" ] && die 'filter name required'
 filter=${1}
-
-########################################################################
 
 load_conf
 load_filter ${filter}
@@ -31,7 +31,8 @@ net=$(get_net ${addr})
 ${SQLITE} ${DB} "INSERT INTO ${TABLE} VALUES ('${now}','${addr}','${net}','${filter}');"
 
 ########################################################################
-# Tester l'adresse IP pour tous les critères
+
+# Tester l'adresse pour tous les critères -> ADDR_TRIGGERS
 
 for criteria in ${ADDR_TRIGGERS} ; do
 
@@ -162,7 +163,8 @@ for criteria in ${ADDR_TRIGGERS} ; do
 done
 
 ########################################################################
-# Tester le réseau pour tous les critères
+
+# Tester le réseau correspondant à l'adresse pour tous les critères -> NET_TRIGGERS
 
 for criteria in ${NET_TRIGGERS} ; do
 
